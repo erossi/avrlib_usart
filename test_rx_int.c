@@ -39,9 +39,11 @@ main (void)
     {
       if (uartPtr->rx_flag)
 	{
-	  PORTB = ~uartPtr->uart_rx_buffer[0];
+          PORTB = ~(uartPtr->rxIdx);
+	  uart_printstr(uartPtr->rx_buffer);
 	  uartPtr->rx_flag = 0;
-	  uart_putchar(uartPtr->uart_rx_buffer[0]);
+          uartPtr->rxIdx = 0;
+          uartPtr->rx_buffer[0] = 0;
 	}
 
       for (i = 0; i < 50; i++)

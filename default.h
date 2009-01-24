@@ -37,12 +37,20 @@
 #define UART_BAUD 9600
 #define UART_RXBUF_SIZE 128
 #define UART_TXBUF_SIZE 128
+#define UART_RXBUF_MASK ( UART_RXBUF_SIZE - 1 )
+#define UART_TXBUF_MASK ( UART_TXBUF_SIZE - 1 )
+#if ( UART_RXBUF_SIZE & UART_RXBUF_MASK )
+#error RX buffer size is not a power of 2
+#endif
+#if ( UART_TXBUF_SIZE & UART_TXBUF_MASK )
+#error TX buffer size is not a power of 2
+#endif
 
 struct uartStruct
 {
-  char *uart_rx_buffer;
-  char *uart_tx_buffer;
-  volatile uint8_t rx_flag, tx_flag, rx_msg, tx_msg;
+  char *rx_buffer;
+  char *tx_buffer;
+  volatile uint8_t rx_flag, tx_flag, rxIdx, txIdx;
 };
 
 #endif

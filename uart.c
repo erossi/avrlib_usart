@@ -26,7 +26,7 @@
  */
 struct uartStruct *uart_init(void)
 {
-  struct uartStruct *tmp1;
+  struct uartStruct *tmp;
 
 #if F_CPU < 2000000UL && defined(U2X)
   /* improve baud rate error by using 2x clk */
@@ -64,10 +64,17 @@ struct uartStruct *uart_init(void)
   /* 8n2 */
   UCSRC = _BV (URSEL) | _BV (USBS) | _BV (UCSZ0) | _BV (UCSZ1);
 
-  tmp1 = malloc(sizeof(struct uartStruct));
-  tmp1->uart_rx_buffer = malloc(UART_RXBUF_SIZE);
-  tmp1->uart_tx_buffer = malloc(UART_TXBUF_SIZE);
-  return(tmp1);
+  tmp = malloc(sizeof(struct uartStruct));
+  tmp->rx_buffer = malloc(UART_RXBUF_SIZE);
+  tmp->tx_buffer = malloc(UART_TXBUF_SIZE);
+  tmp->rx_flag = 0;
+  tmp->tx_flag = 0;
+  tmp->rxIdx = 0;
+  tmp->txIdx = 0;
+  tmp->rx_buffer[0] = 0;
+  tmp->tx_buffer[0] = 0;
+
+  return(tmp);
 }
 
 /*
@@ -86,12 +93,14 @@ void uart_putchar (const char c)
 /*
  * Send a C (NUL-terminated) string down the UART Tx.
  */
-void uart_printstr (const char *s)
+void uart_printstr (char *s)
 {
   while (*s)
   {
+    /*
     if (*s == '\n')
       uart_putchar ('\r');
+      */
     uart_putchar (*s++);
   }
 }

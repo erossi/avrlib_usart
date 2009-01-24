@@ -1,6 +1,6 @@
 #!/usr/bin/make
 
-MCU = atmega8
+MCU = atmega16
 INC = -I/usr/avr/include/
 LIBS = m
 OPTLEV = s

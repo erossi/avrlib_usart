@@ -22,7 +22,7 @@
 #include <util/delay.h>
 
 /* Globals */
-volatile uint8_t uart_char, flag;
+struct uartStruct *uartPtr;
 
 int
 main (void)
@@ -31,19 +31,17 @@ main (void)
 
   DDRB = 127;
   PORTB = 0;
-  uart_char = 0;
-  flag = 0;
 
-  uart_init ();
-  sei ();
+  uartPtr = uart_init();
+  sei();
 
   for (;;)
     {
-      if (flag)
+      if (uartPtr->rx_flag)
 	{
-	  PORTB = ~uart_char;
-	  flag = 0;
-	  uart_putchar (uart_char);
+	  PORTB = ~uartPtr->uart_rx_buffer[0];
+	  uartPtr->rx_flag = 0;
+	  uart_putchar(uartPtr->uart_rx_buffer[0]);
 	}
 
       for (i = 0; i < 50; i++)

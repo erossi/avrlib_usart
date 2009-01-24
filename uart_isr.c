@@ -17,17 +17,21 @@
 
 #include <inttypes.h>
 #include <avr/interrupt.h>
+#include "default.h"
 #include "uart_isr.h"
 
 /* Global variable and pointer to be used */
 /* inside the ISR routine */
 
-extern volatile uint8_t uart_char, flag;
+extern struct uartStruct *uartPtr;
 
 ISR (USART_RXC_vect)
 {
-  uart_char = UDR;
-  flag++;
+  char tmp;
+
+  tmp = UDR;
+  uartPtr->uart_rx_buffer[0] = tmp;
+  uartPtr->rx_flag++;
 }
 
 ISR (USART_TXC_vect)

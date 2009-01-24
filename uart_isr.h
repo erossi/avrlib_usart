@@ -18,6 +18,4 @@
 #ifndef _UART_ISRSINT_H_
 #define _UART_ISRSINT_H_
 
-void uart_isr_init (void);
-
 #endif

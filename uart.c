@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h> 
 #include <avr/io.h>
 #include "default.h"
 #include "uart_isr.h"
@@ -23,8 +24,10 @@
 /*
  * Initialize the UART to 9600 Bd, tx/rx, 8N1.
  */
-void uart_init (void)
+struct uartStruct *uart_init(void)
 {
+  struct uartStruct *tmp1;
+
 #if F_CPU < 2000000UL && defined(U2X)
   /* improve baud rate error by using 2x clk */
   UCSRA = _BV (U2X);
@@ -60,6 +63,11 @@ void uart_init (void)
 
   /* 8n2 */
   UCSRC = _BV (URSEL) | _BV (USBS) | _BV (UCSZ0) | _BV (UCSZ1);
+
+  tmp1 = malloc(sizeof(struct uartStruct));
+  tmp1->uart_rx_buffer = malloc(UART_RXBUF_SIZE);
+  tmp1->uart_tx_buffer = malloc(UART_TXBUF_SIZE);
+  return(tmp1);
 }
 
 /*

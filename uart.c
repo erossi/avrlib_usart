@@ -1,12 +1,12 @@
-/*
- * Copyright (C) 2009 Enrico Rossi
+/* This file is part of OpenSint
+ * Copyright (C) 2005-2012 Enrico Rossi
  * 
- * This program is free software: you can redistribute it and/or modify
+ * OpenSint is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * OpenSint is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -15,92 +15,176 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h> 
+/*! \file uart.c
+ * \brief UART IO functions
+ *
+ * \bug only partially implemented multi-port. Many things are still
+ * on port0 only.
+ */
+
+#include <stdlib.h>
+#include <string.h>
+#include <avr/interrupt.h>
 #include <avr/io.h>
-#include "default.h"
-#include "uart_isr.h"
 #include "uart.h"
 
-/*
- * Initialize the UART to 9600 Bd, tx/rx, 8N1.
+/*! \brief Interrupt rx.
+ *
+ * This function is triggered every incoming char from the serial
+ * port.
  */
-struct uartStruct *uart_init(void)
+ISR(USART0_RX_vect)
 {
-  struct uartStruct *tmp;
+	uint8_t rxc;
 
-#if F_CPU < 2000000UL && defined(U2X)
-  /* improve baud rate error by using 2x clk */
-  UCSRA = _BV (U2X);
-  UBRRL = (F_CPU / (8UL * UART_BAUD)) - 1;
+	/*! First copy the rx char from the device rx buffer.
+	 */
+	rxc = UDR0;
+
+	/*! if we fill the rx buffer, which should never happens,
+	 * then clear the buffer index, the buffer contents and
+	 * restart.
+	 */
+	if (uartPtr->rxIdx == UART0_RXBUF_MASK) {
+		uartPtr->rxIdx = 0;
+		uartPtr->rx_buffer[0] = 0;
+	}
+
+	if (!uartPtr->rx_flag) {
+		/*! if the rxc is a valid char */
+		if ((rxc > 31) && (rxc < 128)) {
+			/*! * copy the rx char to rx buffer */
+			uartPtr->rx_buffer[uartPtr->rxIdx] = rxc;
+
+			/*! * increment the pointer to the next
+			 * slot. */
+			uartPtr->rxIdx++;
+		}
+
+		/* if rxc is CR and it is NOT the only char
+		 * in the buffer.
+		 */
+		if ((rxc == '\r') && (uartPtr->rxIdx)) {
+			uartPtr->rx_flag = TRUE;
+			uartPtr->rx_buffer[uartPtr->rxIdx] = 0;
+		}
+	}
+}
+
+/* \brief Initialize the UART0 to 9600 Bd, tx/rx, 8N1.
+ *
+ * \parameters port the serial port number.
+ * \bug port should be used with multiport.
+ */
+struct uartStruct *uart_init(const uint8_t port)
+{
+	struct uartStruct *tmp;
+
+#if F_CPU < 2000000UL && defined(U2X0)
+	/* improve baud rate error by using 2x clk */
+	UCSR0A = _BV(U2X0);
+	UBRR0L = (F_CPU / (8UL * UART0_BAUD)) - 1;
 #else
-  UBRRL = (F_CPU / (16UL * UART_BAUD)) - 1;
+	UBRR0L = (F_CPU / (16UL * UART0_BAUD)) - 1;
 #endif
 
 #if defined TXONLY
-  /* Tx only without Rx */
-  UCSRB = _BV (TXEN);
+	/* Tx only without Rx */
+	UCSR0B = _BV(TXEN0);
 #endif
 
 #if defined TXRX
-  /* Tx and Rx only without interrupt */
-  UCSRB = _BV (TXEN) | _BV (RXEN);
+	/* Tx and Rx only without interrupt */
+	UCSR0B = _BV(TXEN0) | _BV(RXEN0);
 #endif
 
 #if defined RXIONLY
-  /* Rx only with interrupt */
-  UCSRB = _BV (RXCIE) | _BV (RXEN);
+	/* Rx only with interrupt */
+	UCSR0B = _BV(RXCIE0) | _BV(RXEN0);
 #endif
 
 #if defined TXRXI
-  /* Rx with interrupt and Tx normal */
-  UCSRB = _BV (RXCIE) | _BV (RXEN) | _BV (TXEN);
+	/* Rx with interrupt and Tx normal */
+	UCSR0B = _BV(RXCIE0) | _BV(RXEN0) | _BV(TXEN0);
 #endif
 
 #if defined TXIRXI
-  /* Rx and Tx with interrupt */
-  UCSRB = _BV (RXCIE) | _BV (RXEN) | _BV (TXCIE) | _BV (TXEN);
+	/* Rx and Tx with interrupt */
+	UCSR0B = _BV(RXCIE0) | _BV(RXEN0) | _BV(TXCIE0) | _BV(TXEN0);
 #endif
 
-  /* 8n2 */
-  UCSRC = _BV (URSEL) | _BV (USBS) | _BV (UCSZ0) | _BV (UCSZ1);
+	/* 8n2 */
+	UCSR0C = _BV(USBS0) | _BV(UCSZ00) | _BV(UCSZ01);
 
-  tmp = malloc(sizeof(struct uartStruct));
-  tmp->rx_buffer = malloc(UART_RXBUF_SIZE);
-  tmp->tx_buffer = malloc(UART_TXBUF_SIZE);
-  tmp->rx_flag = 0;
-  tmp->tx_flag = 0;
-  tmp->rxIdx = 0;
-  tmp->txIdx = 0;
-  tmp->rx_buffer[0] = 0;
-  tmp->tx_buffer[0] = 0;
+	tmp = malloc(sizeof(struct uartStruct));
+	tmp->rx_buffer = malloc(UART0_RXBUF_SIZE);
+	tmp->tx_buffer = malloc(UART0_TXBUF_SIZE);
+	tmp->rx_flag = 0;
+	tmp->tx_flag = 0;
+	tmp->rxIdx = 0;
+	tmp->txIdx = 0;
+	tmp->rx_buffer[0] = 0;
+	tmp->tx_buffer[0] = 0;
 
-  return(tmp);
+	return (tmp);
 }
 
-/*
- * Send character c down the UART Tx, wait until tx holding register
+/*! \brief shutdown the usart port. */
+void uart_shutdown(const uint8_t port)
+{
+        if (port) {
+                UCSR1C = 0;
+                UCSR1B = 0;
+                UBRR1L = 0;
+                UCSR1A = 0;
+        } else {
+                UCSR0C = 0;
+                UCSR0B = 0;
+                UBRR0L = 0;
+                UCSR0A = 0;
+        }
+}
+
+/*! get the message from the RX buffer.
+ *
+ * \parameters port the serial port.
+ * \parameters s the string to copy the message to.
+ * \bug multiport not implemented.
+ * \bug this function should be atomic, cannot be interrupted
+ * while resetting the pointer.
+ */
+void uart_get_msg(const uint8_t port, char *s)
+{
+	strcpy(s, uartPtr->rx_buffer);
+	uartPtr->rx_flag = 0;
+	uartPtr->rxIdx = 0;
+	uartPtr->rx_buffer[0] = 0;
+}
+
+/*! Send character c to the serial port, wait until tx holding register
  * is empty.
+ *
+ * \parameter port the serial port.
+ * \parameter c the char to send.
  */
-
-void uart_putchar (const char c)
+void uart_putchar(const uint8_t port, const char c)
 {
-  if (c == '\n')
-    uart_putchar ('\r');
-  loop_until_bit_is_set (UCSRA, UDRE);
-  UDR = c;
+	if (port) {
+		loop_until_bit_is_set(UCSR1A, UDRE1);
+		UDR1 = c;
+	} else {
+		loop_until_bit_is_set(UCSR0A, UDRE0);
+		UDR0 = c;
+	}
 }
 
-/*
- * Send a C (NUL-terminated) string down the UART Tx.
+/*! Send a C (NUL-terminated) string to the serial port.
+ *
+ * \parameter port the serial port.
+ * \parameter s the string to send.
  */
-void uart_printstr (char *s)
+void uart_printstr(const uint8_t port, const char *s)
 {
-  while (*s)
-  {
-    /*
-    if (*s == '\n')
-      uart_putchar ('\r');
-      */
-    uart_putchar (*s++);
-  }
+	while (*s)
+		uart_putchar(port, *s++);
 }

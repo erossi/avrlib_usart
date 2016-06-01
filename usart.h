@@ -1,19 +1,21 @@
-/* Copyright (C) 2005-2016 Enrico Rossi
+/*
+    USART - Serial port library.
+    Copyright (C) 2005-2016 Enrico Rossi
 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
 
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA  02110-1301  USA
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor,
+    Boston, MA  02110-1301  USA
  */
 
 /*! \file usart.h
@@ -23,7 +25,15 @@
 #ifndef _USART_H_
 #define _USART_H_
 
-/*! Arduino setup */
+#include "circular_buffer.h"
+
+#ifdef USE_DEFAULT_H
+#include "default.h"
+#endif
+
+/*! Arduino setup
+ * -D USE_ARDUINO
+ */
 #ifdef USE_ARDUINO
 
 #ifdef USE_USART1
@@ -43,17 +53,17 @@
  * -D USART1_CHARFILTER
  */
 
-/*! Use the circular buffer
- */
-#include "circular_buffer.h"
-
 /*! USART 0 */
-#define USART0_TXBUF_SIZE 64
+#ifndef USART0_TXBUF_SIZE
+#define USART0_TXBUF_SIZE 16
+#endif
 
 /*! if the second serial port is in use */
 #ifdef USE_USART1
-#define USART1_TXBUF_SIZE 64
-#endif
+#ifndef USART1_TXBUF_SIZE
+#define USART1_TXBUF_SIZE 16
+#endif /* USART1_TXBUF_SIZE */
+#endif /* USE_USART1 */
 
 #ifndef CR
 #define CR 0xd

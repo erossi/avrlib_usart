@@ -1,19 +1,21 @@
-/* Copyright (C) 2005-2016 Enrico Rossi
+/*
+    USART - Serial port library.
+    Copyright (C) 2005-2016 Enrico Rossi
 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
 
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA  02110-1301  USA
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor,
+    Boston, MA  02110-1301  USA
  */
 
 #include <stdlib.h>
@@ -62,7 +64,7 @@ ISR(USART1_RX_vect)
 #ifdef USART1_EOL
 	if (rxc == USART1_EOL)
 		rxc = 0;
-#endif
+#endif /* USART1_EOL */
 
 #ifdef USART1_CHARFILTER
 	if (!rxc || ((rxc > 31) && (rxc < 128)))
@@ -71,7 +73,7 @@ ISR(USART1_RX_vect)
 	cbuffer_push(usart1->rx, rxc);
 #endif /* USART1_CHARFILTER */
 }
-#endif /* USART1_EOL */
+#endif /* USE_USART1 */
 
 /*! Start the usart port.
  *
@@ -141,6 +143,7 @@ void usart_resume(const uint8_t port)
 void usart_suspend(const uint8_t port)
 {
 	if (port) {
+
 #ifdef USE_USART1
 		UCSR1B = 0;
 		usart_getchar(1, FALSE);
@@ -150,6 +153,7 @@ void usart_suspend(const uint8_t port)
 		UCSR1A &= ~_BV(U2X1);
 		*/
 #endif
+
 	} else {
 		UCSR0B = 0;
 		usart_getchar(0, FALSE);
@@ -172,10 +176,16 @@ void usart_suspend(const uint8_t port)
 volatile struct usart_t *usart_init(const uint8_t port)
 {
 	if (port) {
+
+#ifdef USE_USART1
 		usart1 = malloc(sizeof(struct usart_t));
 		usart1->rx = cbuffer_init(TRUE);
 		usart1->tx = malloc(USART1_TXBUF_SIZE);
 		return(usart1);
+#else
+		return(NULL);
+#endif /* USE_USART1 */
+
 	} else {
 		usart0 = malloc(sizeof(struct usart_t));
 		usart0->rx = cbuffer_init(TRUE);
@@ -189,9 +199,13 @@ volatile struct usart_t *usart_init(const uint8_t port)
 void usart_shut(uint8_t port)
 {
 	if (port) {
+
+#ifdef USE_USART1
 		cbuffer_shut(usart1->rx);
 		free(usart1->tx);
 		free((void *)usart1);
+#endif /* USE_USART1 */
+
 	} else {
 		cbuffer_shut(usart0->rx);
 		free(usart0->tx);
@@ -202,21 +216,26 @@ void usart_shut(uint8_t port)
 /*! Get a char directly from the usart port. */
 char usart_getchar(const uint8_t port, const uint8_t locked)
 {
+	if (port) {
+
 #ifdef USE_USART1
-	if (locked) {
-		if (port) {
+		if (locked) {
 			loop_until_bit_is_set(UCSR1A, RXC1);
 			return(UDR1);
 		} else {
-			loop_until_bit_is_set(UCSR0A, RXC0);
-			return(UDR0);
-		}
-	} else {
-		if (port) {
 			if (bit_is_set(UCSR1A, RXC1))
 				return(UDR1);
 			else
 				return(FALSE);
+		}
+#else
+		return(FALSE);
+#endif /* USE_USART1 */
+
+	} else {
+		if (locked) {
+			loop_until_bit_is_set(UCSR0A, RXC0);
+			return(UDR0);
 		} else {
 			if (bit_is_set(UCSR0A, RXC0))
 				return(UDR0);
@@ -224,25 +243,19 @@ char usart_getchar(const uint8_t port, const uint8_t locked)
 				return(FALSE);
 		}
 	}
-#else
-	if (locked) {
-		loop_until_bit_is_set(UCSR0A, RXC0);
-		return(UDR0);
-	} else {
-		if (bit_is_set(UCSR0A, RXC0))
-			return(UDR0);
-		else
-			return(FALSE);
-	}
-#endif
 }
 
 void usart_clear_rx_buffer(const uint8_t port)
 {
-	if (port)
+	if (port) {
+
+#ifdef USE_USART1
 		cbuffer_clear(usart1->rx);
-	else
+#endif /* USE_USART1 */
+
+	} else {
 		cbuffer_clear(usart0->rx);
+	}
 }
 
 /*! get the message from the RX buffer of a given maxsize.
@@ -258,10 +271,17 @@ uint8_t usart_getmsg(const uint8_t port, char *s, const uint8_t size)
 {
 	uint8_t ok;
 
-	if (port)
+	if (port) {
+
+#ifdef USE_USART1
 		ok = cbuffer_popm(usart1->rx, s, size);
-	else
+#else
+		ok = 0;
+#endif /* USE_USART1 */
+
+	} else {
 		ok = cbuffer_popm(usart0->rx, s, size);
+	}
 
 	*(s + size - 1) = 0;
 	return(ok);
@@ -275,18 +295,17 @@ uint8_t usart_getmsg(const uint8_t port, char *s, const uint8_t size)
  */
 void usart_putchar(const uint8_t port, const char c)
 {
-#ifdef USE_USART1
 	if (port) {
+
+#ifdef USE_USART1
 		loop_until_bit_is_set(UCSR1A, UDRE1);
 		UDR1 = c;
+#endif /* USE_USART1 */
+
 	} else {
 		loop_until_bit_is_set(UCSR0A, UDRE0);
 		UDR0 = c;
 	}
-#else
-	loop_until_bit_is_set(UCSR0A, UDRE0);
-	UDR0 = c;
-#endif
 }
 
 /*! Send a C (NUL-terminated) string down the USART Tx.
@@ -300,10 +319,15 @@ void usart_printstr(const uint8_t port, const char *s)
 {
 	/* If no char then print the buffer */
 	if (!s) {
-		if (port)
+		if (port) {
+
+#ifdef USE_USART1
 			s = usart1->tx;
-		else
+#endif /* USE_USART1 */
+
+		} else {
 			s = usart0->tx;
+		}
 	}
 
 	while (*s) {

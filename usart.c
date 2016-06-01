@@ -42,12 +42,12 @@ ISR(USART0_RX_vect)
 		rxc = 0;
 #endif
 
-#ifdef USART_CHARFILTER_0
+#ifdef USART0_CHARFILTER
 	if (!rxc || ((rxc > 31) && (rxc < 128)))
 		cbuffer_push(usart0->rx, rxc);
 #else
 	cbuffer_push(usart0->rx, rxc);
-#endif
+#endif /* USART0_CHARFILTER */
 }
 
 #ifdef USE_USART1
@@ -64,14 +64,14 @@ ISR(USART1_RX_vect)
 		rxc = 0;
 #endif
 
-#ifdef USART_CHARFILTER_1
+#ifdef USART1_CHARFILTER
 	if (!rxc || ((rxc > 31) && (rxc < 128)))
 		cbuffer_push(usart1->rx, rxc);
 #else
 	cbuffer_push(usart1->rx, rxc);
-#endif
+#endif /* USART1_CHARFILTER */
 }
-#endif
+#endif /* USART1_EOL */
 
 /*! Start the usart port.
  *
@@ -127,7 +127,7 @@ void usart_resume(const uint8_t port)
 		usart0->flags.all = 0;
 		usart0->tx[0] = 0;
 
-		/*! 115200 bps */
+		/*! ex. Arduino (16Mhz) @ 115200 bps */
 		UCSR0A = _BV(U2X0);
 		UBRR0H = 0;
 		UBRR0L = 16;
@@ -169,18 +169,33 @@ void usart_suspend(const uint8_t port)
  * \warning this should be called only once in the code
  * to avoid memory leak.
  */
-void usart_init(const uint8_t port)
+volatile struct usart_t *usart_init(const uint8_t port)
 {
 	if (port) {
-#ifdef USE_USART1
 		usart1 = malloc(sizeof(struct usart_t));
 		usart1->rx = cbuffer_init(TRUE);
 		usart1->tx = malloc(USART1_TXBUF_SIZE);
-#endif
+		return(usart1);
 	} else {
 		usart0 = malloc(sizeof(struct usart_t));
 		usart0->rx = cbuffer_init(TRUE);
 		usart0->tx = malloc(USART0_TXBUF_SIZE);
+		return(usart0);
+	}
+}
+
+/*! Deallocate the usart port struct.
+ */
+void usart_shut(uint8_t port)
+{
+	if (port) {
+		cbuffer_shut(usart1->rx);
+		free(usart1->tx);
+		free((void *)usart1);
+	} else {
+		cbuffer_shut(usart0->rx);
+		free(usart0->tx);
+		free((void *)usart0);
 	}
 }
 
@@ -224,15 +239,10 @@ char usart_getchar(const uint8_t port, const uint8_t locked)
 
 void usart_clear_rx_buffer(const uint8_t port)
 {
-#ifdef USE_USART1
-	if (port) {
+	if (port)
 		cbuffer_clear(usart1->rx);
-	} else {
+	else
 		cbuffer_clear(usart0->rx);
-	}
-#else
-	cbuffer_clear(usart0->rx);
-#endif
 }
 
 /*! get the message from the RX buffer (legacy).
@@ -244,14 +254,10 @@ void usart_clear_rx_buffer(const uint8_t port)
  */
 uint8_t usart_getmsg(const uint8_t port, char *s)
 {
-#ifdef USE_USART1
 	if (port)
 		return(cbuffer_popm(usart1->rx, s, USART1_RXBUF_SIZE));
 	else
 		return(cbuffer_popm(usart0->rx, s, USART0_RXBUF_SIZE));
-#else
-	return(cbuffer_popm(usart0->rx, s, USART0_RXBUF_SIZE));
-#endif
 }
 
 /*! get the message from the RX buffer of a given maxsize.
@@ -267,14 +273,10 @@ uint8_t usart_getnmsg(const uint8_t port, char *s, const uint8_t size)
 {
 	uint8_t ok;
 
-#ifdef USE_USART1
 	if (port)
 		ok = cbuffer_popm(usart1->rx, s, size);
 	else
 		ok = cbuffer_popm(usart0->rx, s, size);
-#else
-	ok = cbuffer_popm(usart0->rx, s, size);
-#endif
 
 	*(s + size - 1) = 0;
 	return(ok);
@@ -311,7 +313,6 @@ void usart_putchar(const uint8_t port, const char c)
  */
 void usart_printstr(const uint8_t port, const char *s)
 {
-#ifdef USE_USART1
 	/* If no char then print the buffer */
 	if (!s) {
 		if (port)
@@ -319,11 +320,6 @@ void usart_printstr(const uint8_t port, const char *s)
 		else
 			s = usart0->tx;
 	}
-#else
-	/* If no char then print the buffer */
-	if (!s)
-		s = usart0->tx;
-#endif
 
 	while (*s) {
 #ifdef DOS_CRLF

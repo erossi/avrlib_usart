@@ -19,27 +19,42 @@
 
 #include <stdint.h>
 
+/*
+ * Mandatory defs:
+ * CBUF_SIZE
+ * CBUF_EOM
+ *
+ * Optional:
+ * CBUF_OVR_CHAR
+ *
+ */
 #ifndef CBUFFER_H
 #define CBUFFER_H
 
-/*! Options DEFs
+#ifdef USE_DEFAULT_H
+#include "default.h"
+#endif
+
+/*! The size of the buffer.
  *
- * -D CBUF_OVR_CHAR='X'
- * -D CBUF_EOM=0
- * -D CBUF_SIZE=16
+ * default to 16
  */
+#ifndef CBUF_SIZE
+#define CBUF_SIZE 16
+#endif
 
 /*! End Of Message.
+ *
+ * default to 0
  */
 #ifndef CBUF_EOM
 #define CBUF_EOM 0
 #endif
 
-/*! The size of the buffer.
+/*! Optional
+ *
+ * -D CBUF_OVR_CHAR='X'
  */
-#ifndef CBUF_SIZE
-#define CBUF_SIZE 0x10
-#endif
 
 #ifndef TRUE
 #define TRUE 1

@@ -36,4 +36,3 @@ program:
 
 clean:
 	$(REMOVE) *.elf *.hex *.o
-

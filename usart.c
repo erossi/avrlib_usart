@@ -245,21 +245,6 @@ void usart_clear_rx_buffer(const uint8_t port)
 		cbuffer_clear(usart0->rx);
 }
 
-/*! get the message from the RX buffer (legacy).
- *
- * See usart_getnmsg() for info.
- *
- * \param port the serial port.
- * \param s the string to copy the message to.
- */
-uint8_t usart_getmsg(const uint8_t port, char *s)
-{
-	if (port)
-		return(cbuffer_popm(usart1->rx, s, USART1_RXBUF_SIZE));
-	else
-		return(cbuffer_popm(usart0->rx, s, USART0_RXBUF_SIZE));
-}
-
 /*! get the message from the RX buffer of a given maxsize.
  *
  * \param port the serial port.
@@ -269,7 +254,7 @@ uint8_t usart_getmsg(const uint8_t port, char *s)
  * \bug this function should be atomic, cannot be interrupted
  * while resetting the pointer.
  */
-uint8_t usart_getnmsg(const uint8_t port, char *s, const uint8_t size)
+uint8_t usart_getmsg(const uint8_t port, char *s, const uint8_t size)
 {
 	uint8_t ok;
 

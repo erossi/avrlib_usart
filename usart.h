@@ -48,12 +48,10 @@
 #include "circular_buffer.h"
 
 /*! USART 0 */
-#define USART0_RXBUF_SIZE CBUF_SIZE
 #define USART0_TXBUF_SIZE 64
 
 /*! if the second serial port is in use */
 #ifdef USE_USART1
-#define USART1_RXBUF_SIZE CBUF_SIZE
 #define USART1_TXBUF_SIZE 64
 #endif
 
@@ -111,8 +109,7 @@ void usart_shut(uint8_t port);
 char usart_getchar(const uint8_t port, const uint8_t locked);
 void usart_putchar(const uint8_t port, const char c);
 void usart_printstr(const uint8_t port, const char *s);
-uint8_t usart_getmsg(const uint8_t port, char *s);
-uint8_t usart_getnmsg(const uint8_t port, char *s, const uint8_t size);
+uint8_t usart_getmsg(const uint8_t port, char *s, const uint8_t size);
 void usart_clear_rx_buffer(const uint8_t port);
 
 #endif

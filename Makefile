@@ -92,7 +92,7 @@ circular_buffer.o:
 # $(CC) $(CFLAGS) -D USE_USART1 -D USART1_EOL=0x03 -c usart.c
 #
 usart.o:
-	$(CC) $(CFLAGS) -D USE_ARDUINO -c usart.c
+	$(CC) $(CFLAGS) -D USE_ARDUINO -D USART0_EOL=0x30 -c usart.c
 
 ## Debug
 # -D GITREL must be present, definition in the code.

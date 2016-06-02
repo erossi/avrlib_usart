@@ -42,13 +42,22 @@ void print_buffer(void)
 	uint8_t i, j;
 
 	buf = malloc(20);
-	j = usart_get(0, buf, 20);
-	sprintf(debug->buffer, "%02d: ", j);
-	debug_print(NULL);
 
-	for (i=0; i<j; i++) {
-		sprintf(debug->buffer, " %02x", *(buf+i));
+	if (usart0->rx->flags.value.msgs) {
+		debug_print_P(PSTR("Message: "));
+
+		if (usart_getmsg(0, (char *)buf, 20))
+			debug_print((char *)buf);
+	} else {
+		/* binary data */
+		j = usart_get(0, buf, 20);
+		sprintf(debug->buffer, "Data %02d: ", j);
 		debug_print(NULL);
+
+		for (i=0; i<j; i++) {
+			sprintf(debug->buffer, " %02x", *(buf+i));
+			debug_print(NULL);
+		}
 	}
 
 	debug_print_P(PSTR("\n"));

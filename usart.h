@@ -119,6 +119,7 @@ void usart_shut(uint8_t port);
 char usart_getchar(const uint8_t port, const uint8_t locked);
 void usart_putchar(const uint8_t port, const char c);
 void usart_printstr(const uint8_t port, const char *s);
+uint8_t usart_get(const uint8_t port, uint8_t *s, const uint8_t size);
 uint8_t usart_getmsg(const uint8_t port, char *s, const uint8_t size);
 void usart_clear_rx_buffer(const uint8_t port);
 

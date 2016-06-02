@@ -1,52 +1,79 @@
 /*
- * Copyright (C) 2009 Enrico Rossi
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Copyright (C) 2016 Enrico Rossi
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <avr/interrupt.h>
-#include "default.h"
-#include "uart.h"
+#include <avr/pgmspace.h>
 #include <util/delay.h>
+#include "debug.h"
 
-/* Globals */
-struct uartStruct *uartPtr;
-
-int
-main (void)
+void print_usart(void)
 {
-  int i;
+	sprintf(debug->buffer, "i: %d | ", usart0->rx->idx);
+	debug_print(NULL);
+	sprintf(debug->buffer, "m: %d | ", usart0->rx->flags.value.msgs);
+	debug_print(NULL);
+	sprintf(debug->buffer, "s: %d | ", usart0->rx->start);
+	debug_print(NULL);
+	sprintf(debug->buffer, "o: %d", usart0->rx->flags.value.overflow);
+	debug_print(NULL);
+	debug_print_P(PSTR("\n"));
+}
 
-  DDRB = 127;
-  PORTB = 0;
+void print_buffer(void)
+{
+	uint8_t *buf;
+	uint8_t i, j;
 
-  uartPtr = uart_init();
-  sei();
+	buf = malloc(20);
+	j = usart_get(0, buf, 20);
+	sprintf(debug->buffer, "%02d: ", j);
+	debug_print(NULL);
 
-  for (;;)
-    {
-      if (uartPtr->rx_flag)
-	{
-          PORTB = ~(uartPtr->rxIdx);
-	  uart_printstr(uartPtr->rx_buffer);
-	  uartPtr->rx_flag = 0;
-          uartPtr->rxIdx = 0;
-          uartPtr->rx_buffer[0] = 0;
+	for (i=0; i<j; i++) {
+		sprintf(debug->buffer, " %02x", *(buf+i));
+		debug_print(NULL);
 	}
 
-      for (i = 0; i < 50; i++)
-	_delay_ms (10);
-    }
+	debug_print_P(PSTR("\n"));
+	free(buf);
+}
+
+int main(void) {
+	uint8_t i = 0;
+
+	debug_init();
+	sei();
+
+	while (1) {
+		sprintf(debug->buffer, "%02d: ", i);
+		debug_print(NULL);
+		print_usart();
+
+		if (i > 10) {
+			print_buffer();
+			i=0;
+		}
+
+		_delay_ms(1000);
+		i++;
+	}
+
+	return(0);
 }

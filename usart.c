@@ -135,7 +135,7 @@ void usart_resume(const uint8_t port)
 		UBRR0L = 16;
 		/*! tx/rxI enable, 8n1 */
 		UCSR0C = _BV(UCSZ00) | _BV(UCSZ01);
-		UCSR0B = _BV(RXEN0) | _BV(TXEN0);
+		UCSR0B = _BV(RXCIE0) | _BV(RXEN0) | _BV(TXEN0);
 	}
 }
 
@@ -258,14 +258,38 @@ void usart_clear_rx_buffer(const uint8_t port)
 	}
 }
 
+/*! get the RX buffer of a given maxsize.
+ *
+ * \param port the serial port.
+ * \param s the area to copy the message to.
+ * \param size the sizeof(s).
+ * \note s must have the allocated size.
+ */
+uint8_t usart_get(const uint8_t port, uint8_t *s, const uint8_t size)
+{
+	uint8_t ok;
+
+	if (port) {
+
+#ifdef USE_USART1
+		ok = cbuffer_pop(usart1->rx, s, size);
+#else
+		ok = 0;
+#endif /* USE_USART1 */
+
+	} else {
+		ok = cbuffer_pop(usart0->rx, s, size);
+	}
+
+	return(ok);
+}
+
 /*! get the message from the RX buffer of a given maxsize.
  *
  * \param port the serial port.
  * \param s the string to copy the message to.
  * \param size the sizeof(s).
  * \note s must have the allocated size, safety termination is in place.
- * \bug this function should be atomic, cannot be interrupted
- * while resetting the pointer.
  */
 uint8_t usart_getmsg(const uint8_t port, char *s, const uint8_t size)
 {

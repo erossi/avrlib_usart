@@ -37,16 +37,16 @@ CC = avr-gcc
 
 ## Programming device
 # Arduino
-#DUDEPORT = /dev/ttyACM0
-#DUDEDEV = arduino
+DUDEPORT = /dev/ttyACM0
+DUDEDEV = arduino
 #
 ## Stk500v2
 #DUDEPORT = /dev/ttyUSB0
 #DUDEDEV = stk500v2
 #
 ## avrispmkII
-DUDEPORT = usb
-DUDEDEV = avrispmkII
+#DUDEPORT = usb
+#DUDEDEV = avrispmkII
 
 # Use sudo for USB avrispmkII
 DUDE = sudo avrdude -p $(MCU) -e -U flash:w:$(PRGNAME).hex
@@ -73,8 +73,8 @@ debug_obj = $(usart_obj) debug.o
 all:
 	echo "Undefined"
 
-test_arduino: $(debug_obj)
-	$(CC) $(CFLAGS) -o $(ELFNAME).elf test_arduino.c \
+test: $(debug_obj)
+	$(CC) $(CFLAGS) -o $(ELFNAME).elf test_rx_int.c \
 		 $(debug_obj) $(LFLAGS)
 	$(OBJCOPY) $(ELFNAME).elf $(PRGNAME).hex
 

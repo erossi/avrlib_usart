@@ -23,6 +23,7 @@
 #ifndef DBG_H
 #define DBG_H
 
+#include <avr/pgmspace.h>
 #include "usart.h"
 
 #ifdef USE_DEFAULT_H

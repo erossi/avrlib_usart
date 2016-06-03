@@ -42,7 +42,7 @@ uint8_t debug_getstr(char *s, const uint8_t size, const uint8_t echo)
 	}
 #else
 	uint8_t i, loop;
-       
+
 	i = 0;
 	ok = FALSE;
 

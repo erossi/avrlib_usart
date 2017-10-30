@@ -38,12 +38,9 @@
 #endif
 
 class Usart0_Base {
-	private:
-		static void resume_hw();
-		static void suspend_hw();
 	public:
-		static void resume() { Usart0_Base::resume_hw(); };
-		static void suspend() { Usart0_Base::suspend_hw(); };
+		static void resume();
+		static void suspend();
 		static bool get(uint8_t *, const bool);
 		static void put(const uint8_t);
 };

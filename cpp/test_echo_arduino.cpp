@@ -6,11 +6,11 @@ Usart0_Base usart0;
 int main() {
 	uint8_t c;
 
-	Usart0_Base::resume();
+	usart0.resume();
 
 	while(true)
-		if (Usart0_Base::get(&c, true))
-			Usart0_Base::put(c);
+		if (usart0.get(&c, true))
+			usart0.put(c);
 
 	return 0;
 }

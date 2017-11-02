@@ -69,6 +69,16 @@ void Usart0_Base::resume()
 	UCSR0C = _BV(UCSZ00) | _BV(UCSZ01);
 	// tx/rx
 	UCSR0B = _BV(RXEN0) | _BV(TXEN0);
+
+	/* For the Usart1
+	UCSR1A = _BV(U2X1);
+	UBRR1H = 0;
+	UBRR1L = 207;
+	// 8n1
+	UCSR1C = _BV(UCSZ10) | _BV(UCSZ11);
+	// tx/rx
+	UCSR1B = _BV(RXEN1) | _BV(TXEN1);
+	*/
 }
 
 /*! Disable the usart port. */

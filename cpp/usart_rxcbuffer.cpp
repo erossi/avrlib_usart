@@ -18,43 +18,49 @@
     Boston, MA  02110-1301  USA
  */
 
-/*! \file usart_base.h
- * \brief RS232 - IO Base functions.
- */
-
-#ifndef _USART_BASE_H_
-#define _USART_BASE_H_
-
 #include <stdint.h>
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include "usart_rxcbuffer.h"
 
-/*! Arduino setup
- * MCU = atmega328p
+/*! \brief Interrupt rx.
+ *
+ * IRQ functions triggered every incoming char from the serial
+ * ports.
+ * If USARTn_EOL defined, every incoming USARTn_EOL chars increments
+ * the message counter in the usartn struct.
+ *
  */
-#if defined(__AVR_ATMega328P__)
+ISR(USART0_RX_vect)
+{
+	uint8_t rxc;
 
-#define USART0_RX_vect USART_RX_vect
-#define USART0_TX_vect USART_TX_vect
+	/*! First copy the rx char from the device rx buffer. */
+	rxc = UDR0;
+	Usart0_RxCBuffer::put(rxc);
+}
 
-#endif
-
-class Usart0_Base {
-	public:
-		static void resume();
-		static void suspend();
-		static bool get(uint8_t *, const bool);
-		static void put(const uint8_t);
-};
-
-/* For Usart1 duplicate the code with the proper registers:
-
-class Usart1_Base {
-	public:
-		static void resume();
-		static void suspend();
-		static bool get(uint8_t *, const bool);
-		static void put(const uint8_t);
-};
-
+/*! Start the usart port.
  */
+void Usart0_RxCBuffer::resume()
+{
+	rxbuffer_.clear();
+	Usart0_Base::resume();
+}
 
-#endif
+/*! Disable the usart port. */
+void Usart0_RxCBuffer::suspend()
+{
+	Usart0_Base::suspend();
+	rxbuffer_.clear();
+}
+
+bool Usart0_RxCBuffer::getc(uint8_t *data)
+{
+	return(rxbuffer_.popc(data));
+}
+
+bool Usart0_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
+{
+	return(rxbuffer_.pop(data, sizeofdata));
+}

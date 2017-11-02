@@ -18,43 +18,27 @@
     Boston, MA  02110-1301  USA
  */
 
-/*! \file usart_base.h
- * \brief RS232 - IO Base functions.
+/*! \file usart_rxcbuffer.h
+ * \brief RS232 - IO functions.
  */
 
-#ifndef _USART_BASE_H_
-#define _USART_BASE_H_
+#ifndef _USART_RXCBUFFER_H_
+#define _USART_RXCBUFFER_H_
 
 #include <stdint.h>
+#include "usart_base.h"
+#include "circular_buffer.h"
 
-/*! Arduino setup
- * MCU = atmega328p
- */
-#if defined(__AVR_ATMega328P__)
-
-#define USART0_RX_vect USART_RX_vect
-#define USART0_TX_vect USART_TX_vect
-
-#endif
-
-class Usart0_Base {
+class Usart0_RxCBuffer : public Usart0_Base {
+	private:
+		static CBuffer<uint8_t, uint8_t> rxbuffer_ {RX_BUF_SIZE};
 	public:
 		static void resume();
 		static void suspend();
-		static bool get(uint8_t *, const bool);
-		static void put(const uint8_t);
+		static bool getc(uint8_t *);
+		static bool get(uint8_t *, const uint8_t);
+		static void put(const uint8_t c) { Usart0_Base::put(c); };
+		static void clear() { rxbuffer_.clear(); };
 };
-
-/* For Usart1 duplicate the code with the proper registers:
-
-class Usart1_Base {
-	public:
-		static void resume();
-		static void suspend();
-		static bool get(uint8_t *, const bool);
-		static void put(const uint8_t);
-};
-
- */
 
 #endif

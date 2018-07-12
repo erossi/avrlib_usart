@@ -50,8 +50,6 @@ SIZE = avr-size --format=avr --mcu=$(MCU) $(PRGNAME).elf
 
 REMOVE = rm -f
 
-test_echo_arduino_o = test_echo_arduino.o usart_base.o
-
 .PHONY: clean indent
 .SILENT: help
 .SUFFIXES: .cpp, .o
@@ -64,8 +62,12 @@ test_echo_arduino_o = test_echo_arduino.o usart_base.o
 #
 all:
 
-test_echo_arduino: $(test_echo_arduino_o)
-	$(CXX) $(CXXFLAGS) -o $(PRGNAME).elf $(test_echo_arduino_o) $(LFLAGS)
+test_echo: test_echo.o usart_base.o
+	$(CXX) $(CXXFLAGS) -o $(PRGNAME).elf test_echo.o usart_base.o $(LFLAGS)
+	$(OBJCOPY) $(PRGNAME).elf $(PRGNAME).hex
+
+test_echo_arduino: test_echo_arduino.o usart_base.o
+	$(CXX) $(CXXFLAGS) -o $(PRGNAME).elf test_echo_arduino.o usart_base.o $(LFLAGS)
 	$(OBJCOPY) $(PRGNAME).elf $(PRGNAME).hex
 
 program:

@@ -1,6 +1,6 @@
 /*
     USART - Serial port library.
-    Copyright (C) 2005-2017 Enrico Rossi
+    Copyright (C) 2005-2018 Enrico Rossi
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -65,20 +65,8 @@ void Usart0_Base::resume()
 	UCSR0A = _BV(U2X0);
 	UBRR0H = 0;
 	UBRR0L = 207;
-	// 8n1
-	UCSR0C = _BV(UCSZ00) | _BV(UCSZ01);
-	// tx/rx
-	UCSR0B = _BV(RXEN0) | _BV(TXEN0);
-
-	/* For the Usart1
-	UCSR1A = _BV(U2X1);
-	UBRR1H = 0;
-	UBRR1L = 207;
-	// 8n1
-	UCSR1C = _BV(UCSZ10) | _BV(UCSZ11);
-	// tx/rx
-	UCSR1B = _BV(RXEN1) | _BV(TXEN1);
-	*/
+	UCSR0C = _BV(UCSZ00) | _BV(UCSZ01); // 8n1
+	UCSR0B = _BV(RXEN0) | _BV(TXEN0);   // tx/rx
 }
 
 /*! Disable the usart port. */
@@ -119,3 +107,56 @@ void Usart0_Base::put(const uint8_t c)
 	loop_until_bit_is_set(UCSR0A, UDRE0);
 	UDR0 = c;
 }
+
+// Usart1 replica
+#if defined(UCSR1A) // Usart1 do exist
+
+void Usart1_Base::resume()
+{
+	UCSR1A = _BV(U2X1);
+	UBRR1H = 0;
+	UBRR1L = 207;
+	UCSR1C = _BV(UCSZ10) | _BV(UCSZ11); // 8n1
+	UCSR1B = _BV(RXEN1) | _BV(TXEN1);   // tx/rx
+}
+
+/*! Disable the usart port. */
+void Usart1_Base::suspend()
+{
+	UCSR1B = 0;
+	/* I do not care about resetting all the parameters.
+	   UCSR1C = 0;
+	   UBRR1L = 0;
+	   UCSR1A &= ~_BV(U2X1);
+	   */
+}
+
+/*! Get a byte directly from the usart port. */
+bool Usart1_Base::get(uint8_t *data, const bool locked)
+{
+	if (locked) {
+		loop_until_bit_is_set(UCSR1A, RXC1);
+		*data = UDR1;
+		return(true);
+	} else {
+		if (bit_is_set(UCSR1A, RXC1)) {
+			*data = UDR1;
+			return(true);
+		} else {
+			return(false);
+		}
+	}
+}
+
+/*! Send character c down the USART Tx
+ *
+ * \see Usart0_Base::put
+ */
+void Usart1_Base::put(const uint8_t c)
+{
+	// Wait for empty transmit buffer
+	loop_until_bit_is_set(UCSR1A, UDRE1);
+	UDR1 = c;
+}
+
+#endif

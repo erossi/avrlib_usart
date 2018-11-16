@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2016 Enrico Rossi
+# Copyright (C) 2014-2018 Enrico Rossi
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@ MCU = atmega328p
 FCPU = 16000000UL
 
 PWD = $(shell pwd)
-INC = -I/usr/lib/avr/include/
+INC = -I/usr/lib/avr/include/ \
+      -I../lib/circular_buffer/c
 
 CFLAGS = $(INC) -Wall -Wstrict-prototypes -pedantic -mmcu=$(MCU) -O$(OPTLEV) -D F_CPU=$(FCPU)
 LFLAGS = -lm
@@ -73,9 +74,18 @@ debug_obj = $(usart_obj) debug.o
 all:
 	echo "Undefined"
 
-test: $(debug_obj)
-	$(CC) $(CFLAGS) -o $(ELFNAME).elf test_rx_int.c \
+test_rx_int: circular_buffer.o debug.o usart.o
+	$(CC) $(CFLAGS) -o $(ELFNAME).elf \
+		circular_buffer.o \
+		debug.o \
+		usart.o \
+		test_rx_int.c \
 		 $(debug_obj) $(LFLAGS)
+	$(OBJCOPY) $(ELFNAME).elf $(PRGNAME).hex
+
+test_usart_echo: circular_buffer.o
+	$(CC) $(CFLAGS) -D USE_ARDUINO -c usart.c -o usart.o
+	$(CC) $(CFLAGS) -o $(ELFNAME).elf test_usart_echo.c usart.o circular_buffer.o $(LFLAGS)
 	$(OBJCOPY) $(ELFNAME).elf $(PRGNAME).hex
 
 ## Circular Buffer
@@ -83,7 +93,8 @@ test: $(debug_obj)
 # -D CBUF_EOM
 #
 circular_buffer.o:
-	$(CC) $(CFLAGS) -D CBUF_SIZE=16 -D CBUF_EOM=0 -c circular_buffer.c
+	$(CC) $(CFLAGS) -D CBUF_SIZE=16 -D CBUF_EOM=0 \
+		-c ../lib/circular_buffer/c/circular_buffer.c
 
 ## Usart
 # -D USE_USART1 to use the second serial port.

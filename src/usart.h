@@ -20,6 +20,16 @@
 
 /*! \file usart.h
  * \brief RS232 - IO functions.
+ *
+ * options examples:
+ *  End Of Line = CR
+ * -D USARTn_EOL=0xd
+ *
+ *  Use the arduino device
+ * -D USE_ARDUINO
+ *
+ *  Tx buffer size
+ * -D USARTn_TXBUF_SIZE=16
  */
 
 #ifndef _USART_H_
@@ -32,7 +42,6 @@
 #endif
 
 /*! Arduino setup
- * -D USE_ARDUINO
  */
 #ifdef USE_ARDUINO
 
@@ -45,15 +54,7 @@
 
 #endif
 
-/*! Filter incoming char?
- *
- * In char oriented rx, this filter out anything non-ascii char.
- *
- * -D USART0_CHARFILTER
- * -D USART1_CHARFILTER
- */
-
-/*! USART 0 */
+/*! Tx buffer size must have a default */
 #ifndef USART0_TXBUF_SIZE
 #define USART0_TXBUF_SIZE 16
 #endif
@@ -64,22 +65,6 @@
 #define USART1_TXBUF_SIZE 16
 #endif /* USART1_TXBUF_SIZE */
 #endif /* USE_USART1 */
-
-#ifndef CR
-#define CR 0xd
-#define LF 0xa
-#endif
-
-#ifndef USART0_EOL
-#define USART0_EOL CR
-#endif
-
-#ifndef USART1_EOL
-#define USART1_EOL CR
-#endif
-
-/*! Dos add CR to an LF */
-#define DOS_CRLF
 
 #ifndef TRUE
 #define TRUE 1
@@ -92,14 +77,25 @@ struct usart_t {
 	struct cbuffer_t *rx;
 	/*! transmit buffer. */
 	char *tx;
+	uint8_t tx_size;
 	/*! flags. */
 	volatile union {
-		/* GNU GCC only */
-		__extension__ struct {
-			uint8_t b2:6;
+		/* c11 only */
+		struct {
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			/* lsb bit 0 */
+			uint8_t b0:1;
+			uint8_t b1:1;
+			uint8_t eol:6;
+#else
+			/* msb */
+			uint8_t eol:6;
 			uint8_t b1:1;
 			uint8_t b0:1;
-		} bit;
+#endif
+
+		};
 
 		uint8_t all;
 	} flags;
@@ -117,10 +113,10 @@ void usart_suspend(const uint8_t port);
 volatile struct usart_t *usart_init(uint8_t port);
 void usart_shut(uint8_t port);
 char usart_getchar(const uint8_t port, const uint8_t locked);
-void usart_putchar(const uint8_t port, const char c);
+void usart_putchar(const uint8_t port, const uint8_t c);
 void usart_printstr(const uint8_t port, const char *s);
 uint8_t usart_get(const uint8_t port, uint8_t *s, const uint8_t size);
-uint8_t usart_getmsg(const uint8_t port, char *s, const uint8_t size);
+uint8_t usart_getmsg(const uint8_t port, uint8_t *s, const uint8_t size);
 void usart_clear_rx_buffer(const uint8_t port);
 
 #endif

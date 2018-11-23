@@ -22,46 +22,50 @@
 #include <avr/pgmspace.h>
 #include "debug.h"
 
-/*! Get a string terminated with \r.
+/*! Get a string.
+ *
+ * Overwrites the EOL with \0.
  *
  * \param s pre-allocated string space.
  * \param echo enable the echo on non-irq rx.
  * \return TRUE message is present, FALSE no message.
  */
-uint8_t debug_getstr(char *s, const uint8_t size, const uint8_t echo)
+uint8_t debug_getstr(char *s, const uint8_t ssize, const uint8_t echo)
 {
+	uint8_t len;
+
 #if DEBUG_RX_USEIRQ == 1
-	if (usart_getmsg(DEBUG_SERIAL_PORT, s, size)) {
+	len = usart_getmsg(DEBUG_SERIAL_PORT, (uint8_t *)s, ssize);
+
+	if (len) {
+		*(s + len) = 0;
 
 		if (echo)
 			usart_printstr(DEBUG_SERIAL_PORT, s);
-
-		return(TRUE);
-	} else {
-		return(FALSE);
 	}
 #else
-	uint8_t i, loop;
+	uint8_t loop;
 
-	i = 0;
-	ok = FALSE;
+	len = 0;
+	loop = TRUE;
 
-	while (!ok && i < size) {
-		*(s + i) = usart_getchar(DEBUG_SERIAL_PORT, TRUE);
+	while (loop && len < ssize) {
+		*(s + len) = usart_getchar(DEBUG_SERIAL_PORT, TRUE);
 
 		if (echo)
-			usart_putchar(DEBUG_SERIAL_PORT, *(s + i));
+			usart_putchar(DEBUG_SERIAL_PORT, *(s + len));
 
-		if (*(s + i) == '\r')
-			ok = TRUE;
+		if (*(s + len) == '\r')
+			loop = FALSE;
 		else
-			i++;
+			len++;
 	}
 
-	/* safe end of string */
-	*(s + i) = 0;
-	return(ok);
+	/* end of string */
+	*(s + len) = 0;
 #endif
+
+	return(len);
 }
 
 /*! Print a flash-stored string to the terminal.
@@ -71,7 +75,9 @@ uint8_t debug_getstr(char *s, const uint8_t size, const uint8_t echo)
 void debug_print_P(PGM_P string)
 {
 	if (debug->active) {
-		strcpy_P(debug->buffer, string);
+		strncpy_P(debug->buffer, string, debug->size);
+		/* safe termination of the string */
+		debug->buffer[debug->size - 1] = 0;
 		usart_printstr(DEBUG_SERIAL_PORT, NULL);
 	}
 }
@@ -88,7 +94,7 @@ void debug_print(const char *string)
 {
 	if (debug->active) {
 		if (string)
-			strcpy(debug->buffer, string);
+			strncpy(debug->buffer, string, debug->size);
 
 		usart_printstr(DEBUG_SERIAL_PORT, NULL);
 	}
@@ -109,7 +115,10 @@ static void hello(void)
  */
 void debug_resume(void)
 {
+#ifndef DEBUG_USART_SLAVE
 	usart_resume(DEBUG_SERIAL_PORT);
+#endif
+
 	debug->active = 1;
 }
 
@@ -120,26 +129,36 @@ void debug_resume(void)
 void debug_suspend(void)
 {
 	debug->active = 0;
+
+#ifndef DEBUG_USART_SLAVE
 	usart_suspend(DEBUG_SERIAL_PORT);
+#endif
 }
 
 /*! Initialize the debug_t structure and ask if
  * debug is active.
+ *
+ * \note this function can be called many times
  */
 void debug_init(void)
 {
-	debug = malloc(sizeof(struct debug_t));
-	debug->usart = usart_init(DEBUG_SERIAL_PORT);
-	debug->buffer = debug->usart->tx;
-	debug_resume();
-	hello();
+	if (!debug) {
+		debug = malloc(sizeof(struct debug_t));
+		debug->usart = usart_init(DEBUG_SERIAL_PORT);
+		debug->buffer = debug->usart->tx;
+		debug->size = debug->usart->tx_size;
+		debug_resume();
+		hello();
+	}
 }
 
 void debug_shut(void)
 {
-	debug_suspend();
-	usart_shut(DEBUG_SERIAL_PORT);
-	debug->usart = NULL;
-	debug->buffer = NULL;
-	free(debug);
+	if (debug) {
+		debug_suspend();
+		usart_shut(DEBUG_SERIAL_PORT);
+		debug->usart = NULL;
+		debug->buffer = NULL;
+		free(debug);
+	}
 }

@@ -58,9 +58,6 @@ SIZE = avr-size --format=avr --mcu=$(MCU) $(PRGNAME).elf
 
 REMOVE = rm -f
 
-usart_obj = circular_buffer.o usart.o
-debug_obj = $(usart_obj) debug.o
-
 .PHONY: clean indent
 .SILENT: help
 .SUFFIXES: .c, .o
@@ -74,18 +71,14 @@ debug_obj = $(usart_obj) debug.o
 all:
 	echo "Undefined"
 
-test_rx_int: circular_buffer.o debug.o usart.o
+test_rx_int: usart.o circular_buffer.o debug.o
 	$(CC) $(CFLAGS) -o $(ELFNAME).elf \
-		circular_buffer.o \
-		debug.o \
-		usart.o \
-		test_rx_int.c \
-		 $(debug_obj) $(LFLAGS)
+		circular_buffer.o debug.o usart.o \
+		test_rx_int.c $(LFLAGS)
 	$(OBJCOPY) $(ELFNAME).elf $(PRGNAME).hex
 
-test_usart_echo: circular_buffer.o
-	$(CC) $(CFLAGS) -D USE_ARDUINO -c usart.c -o usart.o
-	$(CC) $(CFLAGS) -o $(ELFNAME).elf test_usart_echo.c usart.o circular_buffer.o $(LFLAGS)
+test_echo: usart.o circular_buffer.o
+	$(CC) $(CFLAGS) -o $(ELFNAME).elf test_echo.c usart.o circular_buffer.o $(LFLAGS)
 	$(OBJCOPY) $(ELFNAME).elf $(PRGNAME).hex
 
 ## Circular Buffer
@@ -126,12 +119,6 @@ clean:
 
 version:
 	# Last Git tag: $(GIT_TAG)
-
-doc_timing:
-	$(MAKE) -C ../doc timing
-
-doc:
-	$(MAKE) -C ../doc doc
 
 size:
 	$(SIZE)

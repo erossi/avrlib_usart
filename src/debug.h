@@ -50,6 +50,11 @@
 #define GITREL "unknown"
 #endif
 
+/*! CR+LF */
+#ifndef CRLF
+#define CRLF "\r\n"
+#endif
+
 /*! True False */
 #ifndef TRUE
 #define FALSE 0
@@ -63,10 +68,11 @@
 struct debug_t {
 	uint8_t active;
 	char *buffer;
+	uint8_t size;
 	volatile struct usart_t *usart;
 };
 
-/*! Global */
+/*! Globals, initialized by the compiler to 0 */
 struct debug_t *debug;
 
 uint8_t debug_getstr(char *s, const uint8_t size, const uint8_t echo);

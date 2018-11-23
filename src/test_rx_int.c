@@ -27,11 +27,9 @@ void print_usart(void)
 {
 	sprintf(debug->buffer, "i: %d | ", usart0->rx->idx);
 	debug_print(NULL);
-	sprintf(debug->buffer, "m: %d | ", usart0->rx->flags.value.msgs);
-	debug_print(NULL);
 	sprintf(debug->buffer, "s: %d | ", usart0->rx->start);
 	debug_print(NULL);
-	sprintf(debug->buffer, "o: %d", usart0->rx->flags.value.overflow);
+	sprintf(debug->buffer, "o: %d", usart0->rx->overflow);
 	debug_print(NULL);
 	debug_print_P(PSTR("\n"));
 }
@@ -43,10 +41,10 @@ void print_buffer(void)
 
 	buf = malloc(20);
 
-	if (usart0->rx->flags.value.msgs) {
+	if (usart0->rx->len) {
 		debug_print_P(PSTR("Message: "));
 
-		if (usart_getmsg(0, (char *)buf, 20))
+		if (usart_getmsg(0, buf, 20))
 			debug_print((char *)buf);
 	} else {
 		/* binary data */

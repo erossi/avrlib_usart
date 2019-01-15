@@ -30,7 +30,7 @@
 /*! Arduino setup
  * MCU = atmega328p
  */
-#if defined(__AVR_ATMega328P__)
+#if defined(__AVR_ATmega328P__)
 
 #define USART0_RX_vect USART_RX_vect
 #define USART0_TX_vect USART_TX_vect

@@ -66,8 +66,10 @@ test_echo: test_echo.o usart_base.o
 	$(CXX) $(CXXFLAGS) -o $(PRGNAME).elf test_echo.o usart_base.o $(LFLAGS)
 	$(OBJCOPY) $(PRGNAME).elf $(PRGNAME).hex
 
-test_echo_arduino: test_echo_arduino.o usart_base.o
-	$(CXX) $(CXXFLAGS) -o $(PRGNAME).elf test_echo_arduino.o usart_base.o $(LFLAGS)
+test_echo_rxc: test_echo_rxcbuffer.o usart_rxcbuffer.o usart_base.o
+	$(CXX) $(CXXFLAGS) -o $(PRGNAME).elf \
+		test_echo_rxcbuffer.o usart_rxcbuffer.o usart_base.o \
+		$(LFLAGS)
 	$(OBJCOPY) $(PRGNAME).elf $(PRGNAME).hex
 
 program:

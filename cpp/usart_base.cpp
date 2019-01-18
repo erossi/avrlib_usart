@@ -81,7 +81,7 @@ void Usart0_Base::suspend()
 }
 
 /*! Get a byte directly from the usart port. */
-bool Usart0_Base::get(uint8_t *data, const bool locked)
+bool Usart0_Base::get(uint8_t* data, const bool locked)
 {
 	if (locked) {
 		loop_until_bit_is_set(UCSR0A, RXC0);
@@ -132,7 +132,7 @@ void Usart1_Base::suspend()
 }
 
 /*! Get a byte directly from the usart port. */
-bool Usart1_Base::get(uint8_t *data, const bool locked)
+bool Usart1_Base::get(uint8_t* data, const bool locked)
 {
 	if (locked) {
 		loop_until_bit_is_set(UCSR1A, RXC1);

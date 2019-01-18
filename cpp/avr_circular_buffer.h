@@ -1,5 +1,5 @@
 /*
- * Circular Buffer, an object oriented circular buffer.
+ * Circular Buffer, an object oriented circular buffer (AVR version).
  * Copyright (C) 2015-2017 Enrico Rossi
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 #ifndef CBUFFER_H
 #define CBUFFER_H
 
-#include <memory>
+#include <stdlib.h>
 
 #ifndef CBUF_SIZE // Default buffer size
 #define CBUF_SIZE 16
@@ -39,7 +39,7 @@ template <typename T, typename D>
 class CBuffer {
 	private:
 		// Fixed array size
-		std::unique_ptr<D[]> buffer_;
+		D* buffer_;
 		T idx_;
 		T start_;
 		bool overflow_;
@@ -57,9 +57,9 @@ class CBuffer {
 		T index() const { return idx_; };
 		T start() const { return start_; };
 		T operator[](T const i) const { return buffer_[i]; };
-		// contructor
-		CBuffer(T size = CBUF_SIZE);
-		void clear();
+		CBuffer(T size = CBUF_SIZE); // Contructor
+		~CBuffer() { free(buffer_); }; // Destructor
+		virtual void clear();
 		bool popc(D*);
 		T pop(D*, const T);
 		bool push(D);
@@ -83,7 +83,7 @@ void CBuffer<T, D>::clear()
 template <typename T, typename D>
 CBuffer<T, D>::CBuffer(T sz) : size_{sz}
 {
-	buffer_ = std::make_unique<D[]>(size_);
+	buffer_ = (D*) malloc(sizeof(D) * size_);
 	TOP_ = size_ - 1;
 	clear();
 }
@@ -175,4 +175,5 @@ bool CBuffer<T, D>::push(D c)
 		return (true);
 	}
 }
+
 #endif

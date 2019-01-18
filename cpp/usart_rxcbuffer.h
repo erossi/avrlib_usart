@@ -1,6 +1,6 @@
 /*
     USART - Serial port library.
-    Copyright (C) 2005-2017 Enrico Rossi
+    Copyright (C) 2005-2019 Enrico Rossi
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,8 @@
 
 /*! \file usart_rxcbuffer.h
  * \brief RS232 - IO functions.
+ *
+ * \note: Use CBUF_SIZE to change the default size.
  */
 
 #ifndef _USART_RXCBUFFER_H_
@@ -27,18 +29,16 @@
 
 #include <stdint.h>
 #include "usart_base.h"
-#include "circular_buffer.h"
+#include "avr_circular_buffer.h"
 
 class Usart0_RxCBuffer : public Usart0_Base {
-	private:
-		static CBuffer<uint8_t, uint8_t> rxbuffer_ {RX_BUF_SIZE};
 	public:
-		static void resume();
+		static CBuffer<uint8_t, uint8_t> rxbuffer;
+		static void resume(); // override with IRQ RX
 		static void suspend();
-		static bool getc(uint8_t *);
-		static bool get(uint8_t *, const uint8_t);
-		static void put(const uint8_t c) { Usart0_Base::put(c); };
-		static void clear() { rxbuffer_.clear(); };
+		static uint8_t get(uint8_t*, const uint8_t = 1);
+		static void put(const uint8_t);
+		static void clear();
 };
 
 #endif

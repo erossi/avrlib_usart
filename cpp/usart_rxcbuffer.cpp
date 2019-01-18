@@ -1,6 +1,6 @@
 /*
     USART - Serial port library.
-    Copyright (C) 2005-2017 Enrico Rossi
+    Copyright (C) 2005-2019 Enrico Rossi
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -35,32 +35,50 @@ ISR(USART0_RX_vect)
 {
 	uint8_t rxc;
 
-	/*! First copy the rx char from the device rx buffer. */
-	rxc = UDR0;
-	Usart0_RxCBuffer::put(rxc);
+	rxc = UDR0; // Get the char from the device
+	Usart0_RxCBuffer::rxbuffer.push(rxc); // push it into the buffer
 }
 
+/*! Out of class cbuffer constructor.
+ *
+ * Since we use a static class, allocate the space for
+ * the buffer.
+ */
+CBuffer<uint8_t, uint8_t> Usart0_RxCBuffer::rxbuffer;
+
 /*! Start the usart port.
+ *
+ * Override the base resume, we need to use the RX IRQ.
  */
 void Usart0_RxCBuffer::resume()
 {
-	rxbuffer_.clear();
-	Usart0_Base::resume();
+	rxbuffer.clear();
+	UCSR0A = _BV(U2X0);
+	UBRR0H = 0;
+	UBRR0L = 207;
+	UCSR0C = _BV(UCSZ00) | _BV(UCSZ01); // 8n1
+	// Rx with interrupt and Tx normal
+	UCSR0B = _BV(RXCIE0) | _BV(RXEN0) | _BV(TXEN0);
 }
 
 /*! Disable the usart port. */
 void Usart0_RxCBuffer::suspend()
 {
 	Usart0_Base::suspend();
-	rxbuffer_.clear();
+	rxbuffer.clear();
 }
 
-bool Usart0_RxCBuffer::getc(uint8_t *data)
+uint8_t Usart0_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
 {
-	return(rxbuffer_.popc(data));
+	return(rxbuffer.pop(data, sizeofdata));
 }
 
-bool Usart0_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
+void Usart0_RxCBuffer::put(const uint8_t c)
 {
-	return(rxbuffer_.pop(data, sizeofdata));
+	Usart0_Base::put(c);
+}
+
+void Usart0_RxCBuffer::clear()
+{
+	rxbuffer.clear();
 }

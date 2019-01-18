@@ -41,7 +41,7 @@ class Usart0_Base {
 	public:
 		static void resume();
 		static void suspend();
-		static bool get(uint8_t *, const bool);
+		static bool get(uint8_t*, const bool);
 		static void put(const uint8_t);
 };
 

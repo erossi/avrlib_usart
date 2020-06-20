@@ -57,7 +57,8 @@ class CBuffer {
 		T index() const { return idx_; };
 		T start() const { return start_; };
 		T operator[](T const i) const { return buffer_[i]; };
-		CBuffer(T size = CBUF_SIZE); // Contructor
+		// contructor
+		CBuffer(T size = CBUF_SIZE);
 		~CBuffer() { free(buffer_); }; // Destructor
 		virtual void clear();
 		bool popc(D*);
@@ -175,5 +176,4 @@ bool CBuffer<T, D>::push(D c)
 		return (true);
 	}
 }
-
 #endif

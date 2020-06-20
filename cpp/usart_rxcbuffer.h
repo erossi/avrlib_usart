@@ -41,18 +41,4 @@ class Usart0_RxCBuffer : public Usart0_Base {
 		static void clear();
 };
 
-#if defined(UCSR1A) // Usart1 do exist
-
-// For Usart1 duplicate the code with the proper registers:
-class Usart1_RxCBuffer : public Usart1_Base {
-        public:
-		static CBuffer<uint8_t, uint8_t> rxbuffer;
-		static void resume(); // override with IRQ RX
-		static void suspend();
-		static uint8_t get(uint8_t*, const uint8_t = 1);
-		static void put(const uint8_t);
-		static void clear();
-};
-
-#endif // Usart1
 #endif

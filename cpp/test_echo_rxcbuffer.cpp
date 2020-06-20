@@ -1,9 +1,19 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+
+#ifdef _USE_USART1_
+#include "usart_rxcbuffer_p2.h"
+
+Usart1_RxCBuffer usart; // IRQ global
+
+#else
 #include "usart_rxcbuffer.h"
 
 Usart0_RxCBuffer usart; // IRQ global
+
+#endif
+
 
 int main() {
 	uint8_t c[6] = {'h', 'e', 'l', 'l', 'o', '\n'};

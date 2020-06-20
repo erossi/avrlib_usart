@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Enrico Rossi
+# Copyright (C) 2017, 2020 Enrico Rossi
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,15 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 PRG_NAME = usart
+OPTLEV = 2
 
-# space opt
-OPTLEV = s
-
-MCU = atmega328p
-FCPU = 16000000UL
 # ex. 1284p 1Mhz
-# MCU = atmega1284p
-# FCPU = 1000000UL
+MCU = atmega1284p
+FCPU = 1000000UL
 
 PWD = $(shell pwd)
 INC = -I/usr/lib/avr/include/
@@ -64,20 +60,34 @@ REMOVE = rm -f
 ### Libraries
 common_o := \
 	usart_base.o \
-	usart_rxcbuffer.o
+	usart_base_p2.o \
+	usart_rxcbuffer.o \
+	usart_rxcbuffer_p2.o
 
 ## Default
 #
 all: \
 	test_echo \
-	test_echo_rxcbuffer
+	test_echo_p2 \
+	test_echo_rxcbuffer \
+	test_echo_rxcbuffer_p2
 
 test_echo: $(common_o)
 	$(CXX) $(CXXFLAGS) -o $@.elf $@.cpp $(common_o) $(LFLAGS)
 	$(OBJCOPY) $@.elf $@.hex
 
+test_echo_p2: $(common_o)
+	$(CXX) $(CXXFLAGS) -D _USE_USART1_ \
+		-o $@.elf test_echo.cpp $(common_o) $(LFLAGS)
+	$(OBJCOPY) $@.elf $@.hex
+
 test_echo_rxcbuffer: $(common_o)
 	$(CXX) $(CXXFLAGS) -o $@.elf $@.cpp $(common_o) $(LFLAGS)
+	$(OBJCOPY) $@.elf $@.hex
+
+test_echo_rxcbuffer_p2: $(common_o)
+	$(CXX) $(CXXFLAGS) -D _USE_USART1_ \
+		-o $@.elf test_echo_rxcbuffer.cpp $(common_o) $(LFLAGS)
 	$(OBJCOPY) $@.elf $@.hex
 
 program:

@@ -18,33 +18,23 @@
     Boston, MA  02110-1301  USA
  */
 
+/*! \file
+ * \brief RS232 - IO Base functions with 2 ports
+ */
+
+#ifndef _USART_BASE2_H_
+#define _USART_BASE2_H_
 
 #include <stdint.h>
-
-#ifdef _USE_USART1_
-#include "usart_base_p2.h"
-
-Usart1_Base usart;
-
-#else
 #include "usart_base.h"
 
-Usart0_Base usart;
+// For Usart1 duplicate the code with the proper registers:
+class Usart1_Base {
+	public:
+		static void resume();
+		static void suspend();
+		static bool get(uint8_t*, const bool);
+		static void put(const uint8_t);
+};
 
 #endif
-
-int main() {
-	uint8_t c;
-	uint8_t hello[] {'h', 'e', 'l', 'l', 'o'};
-
-	usart.resume();
-
-	for (int i=0; i<5; i++)
-		usart.put(hello[i]);
-
-	while(true)
-		if (usart.get(&c, true))
-			usart.put(c);
-
-	return 0;
-}

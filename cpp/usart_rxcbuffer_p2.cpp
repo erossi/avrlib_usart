@@ -21,64 +21,59 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#include "usart_rxcbuffer.h"
+#include "usart_rxcbuffer_p2.h"
 
 /*! \brief Interrupt rx.
  *
- * IRQ functions triggered every incoming char from the serial
- * ports.
- * If USARTn_EOL defined, every incoming USARTn_EOL chars increments
- * the message counter in the usartn struct.
- *
+ * \see ISR(USART0_RX_vect)
  */
-ISR(USART0_RX_vect)
+ISR(USART1_RX_vect)
 {
 	uint8_t rxc;
 
-	rxc = UDR0; // Get the char from the device
-	Usart0_RxCBuffer::rxbuffer.push(rxc); // push it into the buffer
+	rxc = UDR1; // Get the char from the device
+	Usart1_RxCBuffer::rxbuffer.push(rxc); // push it into the buffer
 }
 
 /*! Out of class cbuffer constructor.
  *
- * Since we use a static class, allocate the space for
- * the buffer.
+ * \see CBuffer<uint8_t, uint8_t> Usart0_RxCBuffer::rxbuffer
  */
-CBuffer<uint8_t, uint8_t> Usart0_RxCBuffer::rxbuffer;
+CBuffer<uint8_t, uint8_t> Usart1_RxCBuffer::rxbuffer;
 
 /*! Start the usart port.
  *
- * Override the base resume, we need to use the RX IRQ.
+ * \see Usart0_RxCBuffer::resume()
  */
-void Usart0_RxCBuffer::resume()
+void Usart1_RxCBuffer::resume()
 {
 	rxbuffer.clear();
-	UCSR0A = _BV(U2X0);
-	UBRR0H = 0;
-	UBRR0L = 207;
-	UCSR0C = _BV(UCSZ00) | _BV(UCSZ01); // 8n1
+	UCSR1A = _BV(U2X1);
+	UBRR1H = 0;
+	UBRR1L = 207;
+	UCSR1C = _BV(UCSZ10) | _BV(UCSZ11); // 8n1
 	// Rx with interrupt and Tx normal
-	UCSR0B = _BV(RXCIE0) | _BV(RXEN0) | _BV(TXEN0);
+	UCSR1B = _BV(RXCIE1) | _BV(RXEN1) | _BV(TXEN1);
 }
 
 /*! Disable the usart port. */
-void Usart0_RxCBuffer::suspend()
+void Usart1_RxCBuffer::suspend()
 {
-	Usart0_Base::suspend();
+	Usart1_Base::suspend();
 	rxbuffer.clear();
 }
 
-uint8_t Usart0_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
+uint8_t Usart1_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
 {
 	return(rxbuffer.pop(data, sizeofdata));
 }
 
-void Usart0_RxCBuffer::put(const uint8_t c)
+void Usart1_RxCBuffer::put(const uint8_t c)
 {
-	Usart0_Base::put(c);
+	Usart1_Base::put(c);
 }
 
-void Usart0_RxCBuffer::clear()
+void Usart1_RxCBuffer::clear()
 {
 	rxbuffer.clear();
 }

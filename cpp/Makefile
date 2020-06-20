@@ -20,6 +20,9 @@ OPTLEV = s
 
 MCU = atmega328p
 FCPU = 16000000UL
+# ex. 1284p 1Mhz
+# MCU = atmega1284p
+# FCPU = 1000000UL
 
 PWD = $(shell pwd)
 INC = -I/usr/lib/avr/include/
@@ -58,19 +61,24 @@ REMOVE = rm -f
 #
 .EXPORT_ALL_VARIABLES: doc
 
+### Libraries
+common_o := \
+	usart_base.o \
+	usart_rxcbuffer.o
+
 ## Default
 #
-all:
+all: \
+	test_echo \
+	test_echo_rxcbuffer
 
-test_echo: test_echo.o usart_base.o
-	$(CXX) $(CXXFLAGS) -o $(PRGNAME).elf test_echo.o usart_base.o $(LFLAGS)
-	$(OBJCOPY) $(PRGNAME).elf $(PRGNAME).hex
+test_echo: $(common_o)
+	$(CXX) $(CXXFLAGS) -o $@.elf $@.cpp $(common_o) $(LFLAGS)
+	$(OBJCOPY) $@.elf $@.hex
 
-test_echo_rxc: test_echo_rxcbuffer.o usart_rxcbuffer.o usart_base.o
-	$(CXX) $(CXXFLAGS) -o $(PRGNAME).elf \
-		test_echo_rxcbuffer.o usart_rxcbuffer.o usart_base.o \
-		$(LFLAGS)
-	$(OBJCOPY) $(PRGNAME).elf $(PRGNAME).hex
+test_echo_rxcbuffer: $(common_o)
+	$(CXX) $(CXXFLAGS) -o $@.elf $@.cpp $(common_o) $(LFLAGS)
+	$(OBJCOPY) $@.elf $@.hex
 
 program:
 	$(DUDE) -c $(DUDEDEV) -P $(DUDEPORT)

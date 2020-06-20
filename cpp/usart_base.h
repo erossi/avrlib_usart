@@ -45,8 +45,16 @@ class Usart0_Base {
 		static void put(const uint8_t);
 };
 
+#if defined(UCSR1A) // Usart1 do exist
+
 // For Usart1 duplicate the code with the proper registers:
+class Usart1_Base {
+	public:
+		static void resume();
+		static void suspend();
+		static bool get(uint8_t*, const bool);
+		static void put(const uint8_t);
+};
 
-class Usart1_Base : public Usart0_Base {};
-
+#endif // Usart1
 #endif

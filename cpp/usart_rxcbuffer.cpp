@@ -82,3 +82,63 @@ void Usart0_RxCBuffer::clear()
 {
 	rxbuffer.clear();
 }
+
+// Usart1 replica
+#if defined(UCSR1A) // Usart1 do exist
+
+/*! \brief Interrupt rx.
+ *
+ * \see ISR(USART0_RX_vect)
+ */
+ISR(USART1_RX_vect)
+{
+	uint8_t rxc;
+
+	rxc = UDR1; // Get the char from the device
+	Usart1_RxCBuffer::rxbuffer.push(rxc); // push it into the buffer
+}
+
+/*! Out of class cbuffer constructor.
+ *
+ * \see CBuffer<uint8_t, uint8_t> Usart0_RxCBuffer::rxbuffer
+ */
+CBuffer<uint8_t, uint8_t> Usart1_RxCBuffer::rxbuffer;
+
+/*! Start the usart port.
+ *
+ * \see Usart0_RxCBuffer::resume()
+ */
+void Usart1_RxCBuffer::resume()
+{
+	rxbuffer.clear();
+	UCSR1A = _BV(U2X1);
+	UBRR1H = 0;
+	UBRR1L = 207;
+	UCSR1C = _BV(UCSZ10) | _BV(UCSZ11); // 8n1
+	// Rx with interrupt and Tx normal
+	UCSR1B = _BV(RXCIE1) | _BV(RXEN1) | _BV(TXEN1);
+}
+
+/*! Disable the usart port. */
+void Usart1_RxCBuffer::suspend()
+{
+	Usart1_Base::suspend();
+	rxbuffer.clear();
+}
+
+uint8_t Usart1_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
+{
+	return(rxbuffer.pop(data, sizeofdata));
+}
+
+void Usart1_RxCBuffer::put(const uint8_t c)
+{
+	Usart1_Base::put(c);
+}
+
+void Usart1_RxCBuffer::clear()
+{
+	rxbuffer.clear();
+}
+
+#endif

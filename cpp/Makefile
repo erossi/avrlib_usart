@@ -70,7 +70,8 @@ all: \
 	test_echo \
 	test_echo_p2 \
 	test_echo_rxcbuffer \
-	test_echo_rxcbuffer_p2
+	test_echo_rxcbuffer_p2 \
+	test_echo_x2
 
 test_echo: $(common_o)
 	$(CXX) $(CXXFLAGS) -o $@.elf $@.cpp $(common_o) $(LFLAGS)
@@ -88,6 +89,10 @@ test_echo_rxcbuffer: $(common_o)
 test_echo_rxcbuffer_p2: $(common_o)
 	$(CXX) $(CXXFLAGS) -D _USE_USART1_ \
 		-o $@.elf test_echo_rxcbuffer.cpp $(common_o) $(LFLAGS)
+	$(OBJCOPY) $@.elf $@.hex
+
+test_echo_x2: $(common_o)
+	$(CXX) $(CXXFLAGS) -o $@.elf $@.cpp $(common_o) $(LFLAGS)
 	$(OBJCOPY) $@.elf $@.hex
 
 program:

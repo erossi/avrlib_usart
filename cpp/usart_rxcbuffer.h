@@ -37,7 +37,6 @@ class Usart0_RxCBuffer : public Usart0_Base {
 		static void resume(); // override with IRQ RX
 		static void suspend();
 		static uint8_t get(uint8_t*, const uint8_t = 1);
-		static void put(const uint8_t);
 		static void clear();
 };
 

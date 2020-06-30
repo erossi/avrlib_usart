@@ -68,11 +68,6 @@ uint8_t Usart1_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
 	return(rxbuffer.pop(data, sizeofdata));
 }
 
-void Usart1_RxCBuffer::put(const uint8_t c)
-{
-	Usart1_Base::put(c);
-}
-
 void Usart1_RxCBuffer::clear()
 {
 	rxbuffer.clear();

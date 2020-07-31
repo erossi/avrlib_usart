@@ -23,13 +23,17 @@
 #include <avr/io.h>
 #include "usart_rxcbuffer.h"
 
-/*! \brief Interrupt rx.
+/*! Interrupt rx.
  *
  * IRQ functions triggered every incoming char from the serial
  * ports.
  * If USARTn_EOL defined, every incoming USARTn_EOL chars increments
  * the message counter in the usartn struct.
  *
+ * \bug if the buffer is full, the char is not inserted, but if it
+ * is an EOM then the counter is incremented anyway leading to
+ * having counted EOM superior to those actually present in the
+ * buffer.
  */
 ISR(USART0_RX_vect)
 {
@@ -37,6 +41,10 @@ ISR(USART0_RX_vect)
 
 	rxc = UDR0; // Get the char from the device
 	Usart0_RxCBuffer::rxbuffer.push(rxc); // push it into the buffer
+
+	// This part can be cut out if unused in your code.
+	if (Usart0_RxCBuffer::eom_enable && (rxc == Usart0_RxCBuffer::eom))
+		Usart0_RxCBuffer::eom_counter++;
 }
 
 /*! Out of class cbuffer constructor.
@@ -45,6 +53,9 @@ ISR(USART0_RX_vect)
  * the buffer.
  */
 CBuffer<uint8_t, uint8_t> Usart0_RxCBuffer::rxbuffer;
+uint8_t Usart0_RxCBuffer::eom { '\n' }; // EndOfMessage
+uint8_t Usart0_RxCBuffer::eom_counter { 0 }; // Number of Message in the buffer
+bool Usart0_RxCBuffer::eom_enable { false }; // Use the EOM
 
 /*! Start the usart port.
  *
@@ -73,7 +84,28 @@ uint8_t Usart0_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
 	return(rxbuffer.pop(data, sizeofdata));
 }
 
+/*! get the message from the RX buffer of a given maxsize.
+ *
+ * Caller function should check that a message is present before.
+ *
+ * \param s the string to copy the message to.
+ * \param size the sizeof(s).
+ * \note s must have the allocated size, safety termination is in place.
+ */
+bool Usart0_RxCBuffer::getmsg(uint8_t *data, const size_t size)
+{
+	uint8_t n;
+
+	n = rxbuffer.popm(data, size, eom);
+
+	if (n && eom_counter)
+		eom_counter--;
+
+	return((bool)n);
+}
+
 void Usart0_RxCBuffer::clear()
 {
 	rxbuffer.clear();
+	eom_counter = 0; // clear the counter
 }

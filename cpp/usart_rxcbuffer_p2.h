@@ -29,16 +29,19 @@
 
 #include <stdint.h>
 #include "usart_base_p2.h"
-#include "usart_rxcbuffer.h"
 #include "avr_circular_buffer.h"
 
 // For Usart1 duplicate the code with the proper registers:
 class Usart1_RxCBuffer : public Usart1_Base {
         public:
 		static CBuffer<uint8_t, uint8_t> rxbuffer;
+		static uint8_t eom; // EndOfMessage
+		static uint8_t eom_counter; // Number of Message in the buffer
+		static bool eom_enable; // Use the EOM
 		static void resume(); // override with IRQ RX
 		static void suspend();
 		static uint8_t get(uint8_t*, const uint8_t = 1);
+		static bool getmsg(uint8_t*, const size_t = 1);
 		static void clear();
 };
 

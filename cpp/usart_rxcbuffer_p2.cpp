@@ -23,7 +23,7 @@
 #include <avr/io.h>
 #include "usart_rxcbuffer_p2.h"
 
-/*! \brief Interrupt rx.
+/*! Interrupt rx.
  *
  * \see ISR(USART0_RX_vect)
  */
@@ -33,6 +33,10 @@ ISR(USART1_RX_vect)
 
 	rxc = UDR1; // Get the char from the device
 	Usart1_RxCBuffer::rxbuffer.push(rxc); // push it into the buffer
+
+	// This part can be cut out if unused in your code.
+	if (Usart1_RxCBuffer::eom_enable && (rxc == Usart1_RxCBuffer::eom))
+		Usart1_RxCBuffer::eom_counter++;
 }
 
 /*! Out of class cbuffer constructor.
@@ -40,6 +44,9 @@ ISR(USART1_RX_vect)
  * \see CBuffer<uint8_t, uint8_t> Usart0_RxCBuffer::rxbuffer
  */
 CBuffer<uint8_t, uint8_t> Usart1_RxCBuffer::rxbuffer;
+uint8_t Usart1_RxCBuffer::eom { '\n' }; // EndOfMessage
+uint8_t Usart1_RxCBuffer::eom_counter { 0 }; // Number of Message in the buffer
+bool Usart1_RxCBuffer::eom_enable { false }; // Use the EOM
 
 /*! Start the usart port.
  *
@@ -68,7 +75,24 @@ uint8_t Usart1_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
 	return(rxbuffer.pop(data, sizeofdata));
 }
 
+/*! get the message from the RX buffer of a given maxsize.
+ *
+ * \see Usart0_RxCBuffer::get
+ */
+bool Usart1_RxCBuffer::getmsg(uint8_t *data, const size_t size)
+{
+	uint8_t n;
+
+	n = rxbuffer.popm(data, size, eom);
+
+	if (n && eom_counter)
+		eom_counter--;
+
+	return((bool)n);
+}
+
 void Usart1_RxCBuffer::clear()
 {
 	rxbuffer.clear();
+	eom_counter = 0; // clear the counter
 }

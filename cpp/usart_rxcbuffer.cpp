@@ -90,9 +90,10 @@ uint8_t Usart0_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
  *
  * \param s the string to copy the message to.
  * \param size the sizeof(s).
+ * \return the size of message retreived.
  * \note s must have the allocated size, safety termination is in place.
  */
-bool Usart0_RxCBuffer::getmsg(uint8_t *data, const size_t size)
+uint8_t Usart0_RxCBuffer::getmsg(uint8_t *data, const size_t size)
 {
 	uint8_t n;
 
@@ -101,7 +102,7 @@ bool Usart0_RxCBuffer::getmsg(uint8_t *data, const size_t size)
 	if (n && eom_counter)
 		eom_counter--;
 
-	return((bool)n);
+	return(n);
 }
 
 void Usart0_RxCBuffer::clear()

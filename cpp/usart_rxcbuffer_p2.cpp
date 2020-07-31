@@ -77,9 +77,9 @@ uint8_t Usart1_RxCBuffer::get(uint8_t *data, const uint8_t sizeofdata)
 
 /*! get the message from the RX buffer of a given maxsize.
  *
- * \see Usart0_RxCBuffer::get
+ * \see Usart0_RxCBuffer::getmsg
  */
-bool Usart1_RxCBuffer::getmsg(uint8_t *data, const size_t size)
+uint8_t Usart1_RxCBuffer::getmsg(uint8_t *data, const size_t size)
 {
 	uint8_t n;
 
@@ -88,7 +88,7 @@ bool Usart1_RxCBuffer::getmsg(uint8_t *data, const size_t size)
 	if (n && eom_counter)
 		eom_counter--;
 
-	return((bool)n);
+	return(n);
 }
 
 void Usart1_RxCBuffer::clear()

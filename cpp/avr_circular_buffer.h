@@ -1,6 +1,5 @@
-/*
- * Circular Buffer, an object oriented circular buffer (AVR version).
- * Copyright (C) 2015-2017 Enrico Rossi
+/* Circular Buffer, an object oriented circular buffer (AVR version).
+ * Copyright (C) 2015-2020 Enrico Rossi
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +16,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef CBUFFER_H
-#define CBUFFER_H
+#ifndef _AVR_CBUFFER_H_
+#define _AVR_CBUFFER_H_
 
 #include <stdlib.h>
 
@@ -44,6 +43,8 @@ class CBuffer {
 		T start_;
 		bool overflow_;
 		T len_; // byte left in the buffer
+		virtual void pop_object(D*);
+		virtual void push_object(D);
 	protected:
 		T TOP_;
 		const T size_;
@@ -56,6 +57,7 @@ class CBuffer {
 		bool overflow() const { return overflow_; };
 		T index() const { return idx_; };
 		T start() const { return start_; };
+		// FIXME i < size_
 		T operator[](T const i) const { return buffer_[i]; };
 		// contructor
 		CBuffer(T size = CBUF_SIZE);
@@ -90,6 +92,17 @@ CBuffer<T, D>::CBuffer(T sz) : size_{sz}
 	clear();
 }
 
+/*! Get single object from the buffer.
+ *
+ * This perform the operation, which can be overridden
+ * depending on the type of object.
+ */
+template <typename T, typename D>
+void CBuffer<T, D>::pop_object(D *data)
+{
+	*data = buffer_[start_];
+}
+
 /*! Extract a single object from the buffer.
  *
  * data = buffer[start]
@@ -102,7 +115,7 @@ template <typename T, typename D>
 bool CBuffer<T, D>::popc(D *data)
 {
 	if (len_) {
-		*data = buffer_[start_];
+		pop_object(data); // override me
 
 		if (start_ == TOP_)
 			start_ = 0;
@@ -128,6 +141,8 @@ bool CBuffer<T, D>::popc(D *data)
  * \return the number of bytes fetched.
  * \warning if the data size is less than the buffer, only the sizeofdata
  * byte get fetched, the buffer remain not empty.
+ * \warning if the sizeofdata is bigger than the allocated data,
+ * it will segfault or worse.
  */
 template <typename T, typename D>
 T CBuffer<T, D>::pop(D* data, const T sizeofdata)
@@ -171,6 +186,16 @@ T CBuffer<T, D>::popm(D* data, const T sizeofdata, const D eom)
 	return (j);
 }
 
+/*! Push the single object.
+ *
+ * This function should be overridden.
+ */
+template <typename T, typename D>
+void CBuffer<T, D>::push_object(D c)
+{
+	buffer_[idx_] = c;
+}
+
 /*! add data to the buffer.
  *
  * \note if overflow and EOM then the last char must be the EOM.
@@ -196,7 +221,7 @@ bool CBuffer<T, D>::push(D c)
 				overflow_ = true;
 		}
 
-		buffer_[idx_] = c;
+		push_object(c); // override me
 
 		if (idx_ == TOP_)
 			idx_ = 0;
